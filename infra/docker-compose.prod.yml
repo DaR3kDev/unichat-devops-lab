@@ -1,0 +1,123 @@
+services:
+
+  # =====================================================
+  # API
+  # =====================================================
+  api:
+    image: ghcr.io/dar3kdev/uni-chat-backend:fdea67a
+    container_name: uni-chat-api
+
+    restart: unless-stopped
+
+    ports:
+      - "8080:8080"
+
+    environment:
+
+      ASPNETCORE_ENVIRONMENT: Development
+
+      Mongo__ConnectionString: ${MONGO_CONNECTION_STRING}
+      Mongo__Database: ${MONGO_DATABASE}
+
+      Redis__ConnectionString: ${REDIS_CONNECTION_STRING}
+
+      RabbitMQ__User: ${RABBITMQ_USER}
+      RabbitMQ__Pass: ${RABBITMQ_PASS}
+      RabbitMQ__ConnectionString: ${RABBITMQ_CONNECTION_STRING}
+
+      Jwt__Key: ${JWT_KEY}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
+      Jwt__ExpireMinutes: ${JWT_EXPIRE_MINUTES}
+
+      Refresh__ExpireDays: ${REFRESH_EXPIRE_DAYS}
+
+      Cloudinary__CloudName: ${CLOUDINARY_CLOUD_NAME}
+      Cloudinary__ApiKey: ${CLOUDINARY_API_KEY}
+      Cloudinary__ApiSecret: ${CLOUDINARY_API_SECRET}
+
+      Seq__Url: http://seq:5341
+
+    depends_on:
+      - mongodb
+      - redis
+      - rabbitmq
+      - seq
+
+  # =====================================================
+  # MongoDB
+  # =====================================================
+  mongodb:
+    image: mongo:8
+    container_name: mongodb
+
+    restart: unless-stopped
+
+    ports:
+      - "27017:27017"
+
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+
+    volumes:
+      - mongo_data:/data/db
+
+  # =====================================================
+  # Redis
+  # =====================================================
+  redis:
+    image: redis:8-alpine
+    container_name: redis                                 
+    restart: unless-stopped
+                                
+    ports:
+      - "6379:6379"
+
+  # =====================================================
+  # RabbitMQ
+  # =====================================================
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: rabbitmq
+
+    restart: unless-stopped
+
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
+
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  # =====================================================
+  # SEQ
+  # =====================================================
+  seq:
+    image: datalust/seq:latest
+    container_name: seq
+
+    restart: unless-stopped
+
+    environment:
+      ACCEPT_EULA: Y
+      SEQ_FIRSTRUN_ADMINUSERNAME: ${SEQ_ADMIN}
+      SEQ_FIRSTRUN_ADMINPASSWORD: ${SEQ_ADMIN_PASSWORD}
+
+    ports:
+      - "5341:80"
+
+    volumes:
+      - seq_data:/data
+
+# =====================================================
+# VOLUMES
+# =====================================================
+volumes:
+  mongo_data:
+  rabbitmq_data:
+  seq_data:
