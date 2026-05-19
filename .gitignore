@@ -1,1 +1,20 @@
+# =========================
+# ENV FILES (MUY IMPORTANTE)
+# =========================
 .env
+.env.*
+!.env.example
+
+# =========================
+# DOCKER
+# =========================
+docker-compose.override.yml
+*.log
+*.pid
+
+# =========================
+# VISUAL STUDIO / RIDER
+# =========================
+.vs/
+.idea/
+*.DotSettings.user
