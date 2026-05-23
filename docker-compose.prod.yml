@@ -1,29 +1,29 @@
+version: "3.9"
+
 services:
 
-  # =====================================================
-  # API
-  # =====================================================
+  # =========================
+  # API (.NET)
+  # =========================
   api:
-    image: ghcr.io/dar3kdev/uni-chat-backend:fdea67a
+    image: ghcr.io/dar3kdev/uni-chat-backend:latest
     container_name: uni-chat-api
-
     restart: unless-stopped
 
-    ports:
-      - "8080:8080"
-
     environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://0.0.0.0:8080
 
-      ASPNETCORE_ENVIRONMENT: Development
+      ENABLE_DOCS: ${ENABLE_DOCS}
 
       Mongo__ConnectionString: ${MONGO_CONNECTION_STRING}
       Mongo__Database: ${MONGO_DATABASE}
 
-      Redis__ConnectionString: ${REDIS_CONNECTION_STRING}
+      Redis__ConnectionString: redis:6379
 
       RabbitMQ__User: ${RABBITMQ_USER}
       RabbitMQ__Pass: ${RABBITMQ_PASS}
-      RabbitMQ__ConnectionString: ${RABBITMQ_CONNECTION_STRING}
+      RabbitMQ__ConnectionString: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672
 
       Jwt__Key: ${JWT_KEY}
       Jwt__Issuer: ${JWT_ISSUER}
@@ -36,25 +36,42 @@ services:
       Cloudinary__ApiKey: ${CLOUDINARY_API_KEY}
       Cloudinary__ApiSecret: ${CLOUDINARY_API_SECRET}
 
-      Seq__Url: http://seq:5341
-
     depends_on:
       - mongodb
       - redis
       - rabbitmq
-      - seq
 
-  # =====================================================
-  # MongoDB
-  # =====================================================
-  mongodb:
-    image: mongo:8
-    container_name: mongodb
+    networks:
+      - backend
 
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+
+  nginx:
+    image: nginx:alpine
+    container_name: uni-chat-nginx
     restart: unless-stopped
 
     ports:
-      - "27017:27017"
+      - "80:80"
+
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+
+    depends_on:
+      - api
+
+    networks:
+      - backend
+
+  mongodb:
+    image: mongo:8
+    container_name: mongodb
+    restart: unless-stopped
 
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
@@ -63,29 +80,21 @@ services:
     volumes:
       - mongo_data:/data/db
 
-  # =====================================================
-  # Redis
-  # =====================================================
+    networks:
+      - backend
+
   redis:
     image: redis:8-alpine
-    container_name: redis                                 
+    container_name: redis
     restart: unless-stopped
-                                
-    ports:
-      - "6379:6379"
 
-  # =====================================================
-  # RabbitMQ
-  # =====================================================
+    networks:
+      - backend
+
   rabbitmq:
     image: rabbitmq:4-management
     container_name: rabbitmq
-
     restart: unless-stopped
-
-    ports:
-      - "5672:5672"
-      - "15672:15672"
 
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
@@ -94,13 +103,12 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
-  # =====================================================
-  # SEQ
-  # =====================================================
+    networks:
+      - backend
+
   seq:
     image: datalust/seq:latest
     container_name: seq
-
     restart: unless-stopped
 
     environment:
@@ -108,15 +116,21 @@ services:
       SEQ_FIRSTRUN_ADMINUSERNAME: ${SEQ_ADMIN}
       SEQ_FIRSTRUN_ADMINPASSWORD: ${SEQ_ADMIN_PASSWORD}
 
-    ports:
-      - "5341:80"
-
     volumes:
       - seq_data:/data
 
-# =====================================================
-# VOLUMES
-# =====================================================
+    ports:
+      - "8083:80"
+      - "5341:5341"
+
+    networks:
+      - backend
+
+
+networks:
+  backend:
+    driver: bridge
+
 volumes:
   mongo_data:
   rabbitmq_data:

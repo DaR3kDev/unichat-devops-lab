@@ -1,8 +1,7 @@
+version: "3.9"
+
 services:
 
-  # =========================
-  # Mongo Express (UI MongoDB)
-  # =========================
   mongo-express:
     image: mongo-express:latest
     container_name: mongo-express
@@ -19,11 +18,8 @@ services:
       ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASS}
 
     networks:
-      - backend-net
+      - backend
 
-  # =========================
-  # Redis Insight (UI Redis)
-  # =========================
   redisinsight:
     image: redis/redisinsight:latest
     container_name: redisinsight
@@ -33,28 +29,22 @@ services:
       - "5540:5540"
 
     networks:
-      - backend-net
+      - backend
 
-  # =========================
-  # Dozzle (logs Docker)
-  # =========================
   dozzle:
     image: amir20/dozzle:latest
     container_name: dozzle
     restart: unless-stopped
 
     ports:
-      - "8083:8080"
+      - "8082:8080"
 
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 
     networks:
-      - backend-net
+      - backend
 
-  # =========================
-  # Portainer (Docker UI)
-  # =========================
   portainer:
     image: portainer/portainer-ce:latest
     container_name: portainer
@@ -71,16 +61,11 @@ services:
       - portainer_data:/data
 
     networks:
-      - backend-net
+      - backend
 
-# =========================
-# NETWORKS
-# =========================
 networks:
-  backend-net:
+  backend:
+    external: true
 
-# =========================
-# VOLUMES
-# =========================
 volumes:
   portainer_data:
