@@ -33,22 +33,23 @@ help:
 	@echo " 📡 SERVICIOS DISPONIBLES:"
 	@echo ""
 	@echo " 🔥 API:"
-	@echo "   API ROOT      -> http://$(LOCAL_IP)"
-	@echo "   SCALAR / DOCS -> http://$(LOCAL_IP)/scalar"
-	@echo "   SWAGGER       -> http://$(LOCAL_IP)/swagger"
+	@echo "   SCALAR API    -> http://$(LOCAL_IP)/scalar"
 	@echo ""
 	@echo " 🐇 RABBITMQ:"
 	@echo "   RABBIT UI     -> http://$(LOCAL_IP):15672"
-	@echo "   RABBIT AMQP   -> $(LOCAL_IP):5672"
 	@echo ""
 	@echo " 🍃 MONGODB:"
-	@echo "   MONGO PORT    -> $(LOCAL_IP):27017"
+	@echo "   MONGO EXPRESS -> http://$(LOCAL_IP):8081"
 	@echo ""
 	@echo " ⚡ REDIS:"
-	@echo "   REDIS PORT    -> $(LOCAL_IP):6379"
+	@echo "   REDIS UI      -> http://$(LOCAL_IP):5540"
 	@echo ""
 	@echo " 📜 LOGS:"
 	@echo "   SEQ LOGS      -> http://$(LOCAL_IP):8083"
+	@echo "   DOZZLE        -> http://$(LOCAL_IP):8082"
+	@echo ""
+	@echo " 🐳 DOCKER:"
+	@echo "   PORTAINER     -> http://$(LOCAL_IP):9000"
 	@echo ""
 	@echo " 🧰 COMANDOS:"
 	@echo ""
@@ -112,6 +113,12 @@ logs-rabbit:
 logs-seq:
 	docker logs -f seq
 
+logs-dozzle:
+	docker logs -f dozzle
+
+logs-portainer:
+	docker logs -f portainer
+
 # =========================
 # ESTADO
 # =========================
@@ -135,13 +142,19 @@ info:
 	@echo " 🌍 URLS"
 	@echo "======================================"
 	@echo ""
-	@echo " API            : http://$(LOCAL_IP)"
-	@echo " SCALAR         : http://$(LOCAL_IP)/scalar"
-	@echo " SWAGGER        : http://$(LOCAL_IP)/swagger"
-	@echo " RABBITMQ UI    : http://$(LOCAL_IP):15672"
-	@echo " SEQ LOGS       : http://$(LOCAL_IP):8083"
-	@echo " MONGO          : $(LOCAL_IP):27017"
-	@echo " REDIS          : $(LOCAL_IP):6379"
+	@echo " SCALAR API       : http://$(LOCAL_IP)/scalar" 
+	@echo ""
+	@echo " RABBITMQ UI      : http://$(LOCAL_IP):15672"
+	@echo " RABBITMQ AMQP    : $(LOCAL_IP):5672"
+	@echo ""
+	@echo " MONGO EXPRESS    : http://$(LOCAL_IP):8081"
+	@echo ""
+	@echo " REDIS INSIGHT    : http://$(LOCAL_IP):5540"
+	@echo ""
+	@echo " DOZZLE LOGS      : http://$(LOCAL_IP):8082"
+	@echo " SEQ LOGS         : http://$(LOCAL_IP):8083"
+	@echo ""
+	@echo " PORTAINER        : http://$(LOCAL_IP):9000"
 	@echo ""
 	@echo "======================================"
 	@echo " 🐳 DOCKER STATUS"
