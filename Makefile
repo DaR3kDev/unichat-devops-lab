@@ -5,13 +5,14 @@ PROD_FILE=docker-compose.prod.yml
 TOOLS_FILE=docker-compose.tools.yml
 
 # =========================
-# DETECTAR IP REAL (Windows WiFi + Linux fallback)
+# DETECTAR IP (Linux + Windows)
 # =========================
+UNAME_S := $(shell uname -s)
 
-LOCAL_IP := $(shell powershell -NoProfile -Command "(Get-NetIPAddress -AddressFamily IPv4 | Where-Object {$_.InterfaceAlias -like '*Wi-Fi*' -and $_.IPAddress -notlike '169.*'} | Select-Object -ExpandProperty IPAddress -First 1)")
-
-ifeq ($(LOCAL_IP),)
+ifeq ($(UNAME_S),Linux)
 	LOCAL_IP := $(shell hostname -I 2>/dev/null | awk '{print $$1}')
+else
+	LOCAL_IP := $(shell powershell -NoProfile -Command "(Get-NetIPAddress -AddressFamily IPv4 | Where-Object {$_.InterfaceAlias -like '*Wi-Fi*' -and $_.IPAddress -notlike '169.*'} | Select-Object -ExpandProperty IPAddress -First 1)")
 endif
 
 ifeq ($(LOCAL_IP),)
@@ -30,13 +31,27 @@ help:
 	@echo " 🌐 IP LOCAL (RED REAL): http://$(LOCAL_IP)"
 	@echo ""
 	@echo " 📡 SERVICIOS DISPONIBLES:"
-	@echo "   API         -> http://$(LOCAL_IP)"
-	@echo "   SEQ LOGS    -> http://$(LOCAL_IP):8083"
-	@echo "   PORTAINER   -> http://$(LOCAL_IP):9000"
-	@echo "   MONGO UI    -> http://$(LOCAL_IP):8081"
-	@echo "   REDIS UI    -> http://$(LOCAL_IP):5540"
+	@echo ""
+	@echo " 🔥 API:"
+	@echo "   API ROOT      -> http://$(LOCAL_IP)"
+	@echo "   SCALAR / DOCS -> http://$(LOCAL_IP)/scalar"
+	@echo "   SWAGGER       -> http://$(LOCAL_IP)/swagger"
+	@echo ""
+	@echo " 🐇 RABBITMQ:"
+	@echo "   RABBIT UI     -> http://$(LOCAL_IP):15672"
+	@echo "   RABBIT AMQP   -> $(LOCAL_IP):5672"
+	@echo ""
+	@echo " 🍃 MONGODB:"
+	@echo "   MONGO PORT    -> $(LOCAL_IP):27017"
+	@echo ""
+	@echo " ⚡ REDIS:"
+	@echo "   REDIS PORT    -> $(LOCAL_IP):6379"
+	@echo ""
+	@echo " 📜 LOGS:"
+	@echo "   SEQ LOGS      -> http://$(LOCAL_IP):8083"
 	@echo ""
 	@echo " 🧰 COMANDOS:"
+	@echo ""
 	@echo "   make up         -> levantar todo"
 	@echo "   make prod       -> backend"
 	@echo "   make tools      -> herramientas"
@@ -45,18 +60,26 @@ help:
 	@echo "   make logs       -> logs en vivo"
 	@echo "   make ps         -> contenedores"
 	@echo "   make info       -> info servidor"
+	@echo "   make rebuild    -> reconstruir"
+	@echo "   make clean      -> limpiar todo"
 	@echo ""
+
+# =========================
+# CREAR RED SI NO EXISTE
+# =========================
+network:
+	@docker network inspect backend >/dev/null 2>&1 || docker network create backend
 
 # =========================
 # UP / DOWN
 # =========================
-up:
+up: network
 	docker compose -f $(PROD_FILE) -f $(TOOLS_FILE) up -d
 
-prod:
+prod: network
 	docker compose -f $(PROD_FILE) up -d
 
-tools:
+tools: network
 	docker compose -f $(TOOLS_FILE) up -d
 
 down:
@@ -77,6 +100,18 @@ logs-api:
 logs-nginx:
 	docker logs -f uni-chat-nginx
 
+logs-mongo:
+	docker logs -f mongodb
+
+logs-redis:
+	docker logs -f redis
+
+logs-rabbit:
+	docker logs -f rabbitmq
+
+logs-seq:
+	docker logs -f seq
+
 # =========================
 # ESTADO
 # =========================
@@ -92,30 +127,47 @@ info:
 	@echo " 🖥 SERVER INFO"
 	@echo "======================================"
 	@echo ""
-	@echo " IP REAL     : $(LOCAL_IP)"
-	@echo " USUARIO     : $(shell whoami)"
-	@echo " FECHA       : $(shell date)"
+	@echo " 🌐 IP REAL     : $(LOCAL_IP)"
+	@echo " 👤 USUARIO     : $(shell whoami)"
+	@echo " 📅 FECHA       : $(shell date)"
 	@echo ""
-	@echo " DOCKER STATUS:"
+	@echo "======================================"
+	@echo " 🌍 URLS"
+	@echo "======================================"
+	@echo ""
+	@echo " API            : http://$(LOCAL_IP)"
+	@echo " SCALAR         : http://$(LOCAL_IP)/scalar"
+	@echo " SWAGGER        : http://$(LOCAL_IP)/swagger"
+	@echo " RABBITMQ UI    : http://$(LOCAL_IP):15672"
+	@echo " SEQ LOGS       : http://$(LOCAL_IP):8083"
+	@echo " MONGO          : $(LOCAL_IP):27017"
+	@echo " REDIS          : $(LOCAL_IP):6379"
+	@echo ""
+	@echo "======================================"
+	@echo " 🐳 DOCKER STATUS"
+	@echo "======================================"
 	@docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 	@echo ""
-	@echo " DISCO:"
+	@echo "======================================"
+	@echo " 💾 DISCO"
+	@echo "======================================"
 	@df -h | head -5
 	@echo ""
-	@echo " MEMORIA:"
+	@echo "======================================"
+	@echo " 🧠 MEMORIA"
+	@echo "======================================"
 	@free -h 2>/dev/null || systeminfo | findstr "Memory"
 	@echo ""
 	@echo "======================================"
-	@echo ""
 
 # =========================
 # REBUILD
 # =========================
-rebuild:
+rebuild: network
 	docker compose -f $(PROD_FILE) -f $(TOOLS_FILE) up -d --build
 
 # =========================
-# CLEAN 
+# CLEAN
 # =========================
 clean:
 	docker compose -f $(PROD_FILE) -f $(TOOLS_FILE) down -v
